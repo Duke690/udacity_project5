@@ -26,7 +26,10 @@ int main(int argc, char** argv){
   // Define a position and orientation for the robot to reach
   goal.target_pose.pose.position.x = 3;
   goal.target_pose.pose.position.y = 3;
-  goal.target_pose.pose.orientation.w = 1.0;
+  goal.target_pose.pose.orientation.x = 0.0;
+  goal.target_pose.pose.orientation.y = 0.0;
+  goal.target_pose.pose.orientation.z = 1.0;
+  goal.target_pose.pose.orientation.w = 0;
 
    // Send the goal position and orientation for the robot to reach
   ROS_INFO("Sending goal");
@@ -45,7 +48,10 @@ int main(int argc, char** argv){
     // Request robot to move to Dropoff location
     goal.target_pose.pose.position.x = -3;
     goal.target_pose.pose.position.y = 0.5;
-    goal.target_pose.pose.orientation.w = 1.0;
+  goal.target_pose.pose.orientation.x = 0.0;
+  goal.target_pose.pose.orientation.y = 0.0;
+  goal.target_pose.pose.orientation.z = 1.0;
+  goal.target_pose.pose.orientation.w = 3.0;
 
     ROS_INFO("Please stand by - robot is on it's way to the dropoff zone");
     ac.sendGoal(goal);
