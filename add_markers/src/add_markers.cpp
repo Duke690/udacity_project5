@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <std_msgs/Bool.h>
 
 visualization_msgs::Marker CreateMarker(double x, double y, int32_t action, std::size_t id = 0)
 {
@@ -42,18 +43,35 @@ visualization_msgs::Marker CreateMarker(double x, double y, int32_t action, std:
     marker.lifetime = ros::Duration();
     return marker;
 }
+ros::Publisher marker_pub;
+double pickup_x = 0;
+double pickup_y = 0;
+double dropoff_x = 0;
+double dropoff_y = 0;
+
+/** Subscriber callback for load change events triggered by pick_objects node.
+ *  if @p pickup is true, load has been picked up, if @p pickup is false, load has been dropped off
+ *  This will assume that the global variables pickup_x, dropoff_x etc. are correct and will show a 
+ *  new marker at the dropoff position if @p pickup is false. If @p pickup is true the marker will be removed
+ */
+void LoadChangedHandler(const std_msgs::Bool &pickup)
+{
+    if (pickup.data)
+    {
+        marker_pub.publish(CreateMarker(0, 0, visualization_msgs::Marker::DELETE));
+    }
+    else
+    {
+        marker_pub.publish(CreateMarker(dropoff_x, dropoff_y, visualization_msgs::Marker::ADD));
+    }
+}
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "basic_shapes");
     ros::NodeHandle n;
     ros::Rate r(1);
-    ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-
-    double pickup_x = 0;
-    double pickup_y = 0;
-    double dropoff_x = 0;
-    double dropoff_y = 0;
+    marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
     while (ros::ok())
     {
@@ -69,12 +87,11 @@ int main(int argc, char **argv)
             r.sleep();
         }
     }
-
+    
+    // Subscribe to LoadChange that is published by pick_objects node
+    ros::Subscriber sub = n.subscribe("LoadChange", 1, LoadChangedHandler);
+    // Create initial marker at pickup position
     marker_pub.publish(CreateMarker(pickup_x, pickup_y, visualization_msgs::Marker::ADD));
-    ros::Duration(5).sleep();
-    marker_pub.publish(CreateMarker(pickup_x, pickup_y, visualization_msgs::Marker::DELETE));
-    ros::Duration(5).sleep();
-    marker_pub.publish(CreateMarker(dropoff_x, dropoff_y, visualization_msgs::Marker::ADD));
 
     ros::spin();
 }
