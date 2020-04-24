@@ -43,11 +43,8 @@ visualization_msgs::Marker CreateMarker(double x, double y, int32_t action, std:
     marker.lifetime = ros::Duration();
     return marker;
 }
+
 ros::Publisher marker_pub;
-double pickup_x = 0;
-double pickup_y = 0;
-double dropoff_x = 0;
-double dropoff_y = 0;
 
 /** Subscriber callback for load change events triggered by pick_objects node.
  *  if @p pickup is true, load has been picked up, if @p pickup is false, load has been dropped off
@@ -63,6 +60,8 @@ void LoadChangedHandler(const std_msgs::Bool &pickup)
     }
     else
     {
+        double dropoff_x = 0;
+        double dropoff_y = 0;
         if (ros::param::get("dropoff_x", dropoff_x) && ros::param::get("dropoff_y", dropoff_y))
         {
             std::cout << "Dropped off object at dropoff zone" << std::endl;
@@ -84,6 +83,11 @@ int main(int argc, char **argv)
     // Sleep a little bit to give publisher time to initialize
     r.sleep();
     // Wait for the pick_objects node to start up. pick_objects node will set pickup and dropoff coordinates
+
+    double pickup_x = 0;
+    double pickup_y = 0;
+    double dropoff_x = 0;
+    double dropoff_y = 0;
     while (ros::ok())
     {
         if (ros::param::get("pickup_x", pickup_x) && ros::param::get("pickup_y", pickup_y) &&
