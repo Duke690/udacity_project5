@@ -58,11 +58,20 @@ void LoadChangedHandler(const std_msgs::Bool &pickup)
 {
     if (pickup.data)
     {
+        std::cout << "Picked up object at pickup zone" << std::endl;
         marker_pub.publish(CreateMarker(0, 0, visualization_msgs::Marker::DELETE));
     }
     else
     {
-        marker_pub.publish(CreateMarker(dropoff_x, dropoff_y, visualization_msgs::Marker::ADD));
+        if (ros::param::get("dropoff_x", dropoff_x) && ros::param::get("dropoff_y", dropoff_y))
+        {
+            std::cout << "Dropped off object at dropoff zone" << std::endl;
+            marker_pub.publish(CreateMarker(dropoff_x, dropoff_y, visualization_msgs::Marker::ADD));
+        }
+        else
+        {
+            std::cout << "Robot dropped off his object but position is not provided - can't spawn marker" << std::endl;
+        }
     }
 }
 
@@ -72,7 +81,9 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::Rate r(1);
     marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-
+    // Sleep a little bit to give publisher time to initialize
+    r.sleep();
+    // Wait for the pick_objects node to start up. pick_objects node will set pickup and dropoff coordinates
     while (ros::ok())
     {
         if (ros::param::get("pickup_x", pickup_x) && ros::param::get("pickup_y", pickup_y) &&
@@ -87,7 +98,7 @@ int main(int argc, char **argv)
             r.sleep();
         }
     }
-    
+
     // Subscribe to LoadChange that is published by pick_objects node
     ros::Subscriber sub = n.subscribe("LoadChange", 1, LoadChangedHandler);
     // Create initial marker at pickup position
