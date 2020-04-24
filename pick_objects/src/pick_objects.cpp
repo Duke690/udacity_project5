@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <std_msgs/Bool.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 
@@ -8,6 +9,21 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 int main(int argc, char** argv){
   // Initialize the pick_objects node
   ros::init(argc, argv, "pick_objects");
+  ros::NodeHandle n;
+  ros::Publisher pick_drop_publisher = n.advertise<std_msgs::Bool>("LoadChange", 1);
+  std_msgs::Bool pickup_msg;
+  std_msgs::Bool dropoff_msg;
+  pickup_msg.data = true;
+  dropoff_msg.data = false;
+
+  const double pickup_x = 3;
+  const double pickup_y = 3;
+  const double dropoff_x = -3;
+  const double dropoff_y = 0.5;
+  n.setParam("pickup_x", pickup_x);
+  n.setParam("pickup_y", pickup_y);
+  n.setParam("dropoff_x", dropoff_x);
+  n.setParam("dropoff_y", dropoff_y);
 
   //tell the action client that we want to spin a thread by default
   MoveBaseClient ac("move_base", true);
@@ -24,8 +40,8 @@ int main(int argc, char** argv){
   goal.target_pose.header.stamp = ros::Time::now();
 
   // Define a position and orientation for the robot to reach
-  goal.target_pose.pose.position.x = 3;
-  goal.target_pose.pose.position.y = 3;
+  goal.target_pose.pose.position.x = pickup_x;
+  goal.target_pose.pose.position.y = pickup_y;
   goal.target_pose.pose.orientation.x = 0.0;
   goal.target_pose.pose.orientation.y = 0.0;
   goal.target_pose.pose.orientation.z = 1.0;
@@ -40,18 +56,17 @@ int main(int argc, char** argv){
 
   if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
   {
-
     ROS_INFO("Hooray, robot picked up the object");
-    // Wait for 5 seconds
+    pick_drop_publisher.publish(pickup_msg);
     ros::Duration(5).sleep();
 
     // Request robot to move to Dropoff location
-    goal.target_pose.pose.position.x = -3;
-    goal.target_pose.pose.position.y = 0.5;
-  goal.target_pose.pose.orientation.x = 0.0;
-  goal.target_pose.pose.orientation.y = 0.0;
-  goal.target_pose.pose.orientation.z = 1.0;
-  goal.target_pose.pose.orientation.w = 3.0;
+    goal.target_pose.pose.position.x = dropoff_x;
+    goal.target_pose.pose.position.y = dropoff_y;
+    goal.target_pose.pose.orientation.x = 0.0;
+    goal.target_pose.pose.orientation.y = 0.0;
+    goal.target_pose.pose.orientation.z = 1.0;
+    goal.target_pose.pose.orientation.w = 3.0;
 
     ROS_INFO("Please stand by - robot is on it's way to the dropoff zone");
     ac.sendGoal(goal);
@@ -60,6 +75,7 @@ int main(int argc, char** argv){
     {
       // Robot reached dropoff zone
       ROS_INFO("Hooray, robot dropped off the object");
+      pick_drop_publisher.publish(dropoff_msg);
     }
     else
     {
